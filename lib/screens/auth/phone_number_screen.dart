@@ -28,6 +28,16 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
     final subtitleSize = screenWidth * 0.045;
     final contentPadding = screenWidth * 0.075;
     final formTopPadding = isSmallScreen ? 30.0 : 60.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? const Color(AppColors.darkCard)
+        : const Color(AppColors.white);
+    final textColor = isDark
+        ? const Color(AppColors.darkText)
+        : const Color(AppColors.black);
+    final borderColor = isDark
+        ? const Color(AppColors.darkBorder)
+        : Colors.grey.shade200;
 
     return Scaffold(
       body: Container(
@@ -70,9 +80,9 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
               SizedBox(height: screenHeight * 0.02),
               Expanded(
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(60),
                       topRight: Radius.circular(60),
                     ),
@@ -86,7 +96,7 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
                           duration: const Duration(milliseconds: 1400),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: cardColor,
                               borderRadius: BorderRadius.circular(10),
                               boxShadow: [
                                 BoxShadow(
@@ -104,7 +114,7 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
                                   decoration: BoxDecoration(
                                     border: Border(
                                       bottom: BorderSide(
-                                        color: Colors.grey.shade200,
+                                        color: borderColor,
                                       ),
                                     ),
                                   ),
@@ -147,9 +157,10 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
                                               10,
                                             ),
                                           ],
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.w500,
+                                            color: textColor,
                                           ),
                                           decoration: const InputDecoration(
                                             hintText: '3001234567',

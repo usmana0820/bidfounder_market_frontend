@@ -34,6 +34,13 @@ class _LoginScreenState extends State<LoginScreen> {
     final subtitleSize = screenWidth * 0.045;
     final contentPadding = screenWidth * 0.075; // Responsive padding
     final formTopPadding = isSmallScreen ? 30.0 : 60.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? const Color(AppColors.darkCard)
+        : const Color(AppColors.white);
+    final textColor = isDark
+        ? const Color(AppColors.darkText)
+        : const Color(AppColors.black);
     
     return Scaffold(
       body: Container(
@@ -87,9 +94,9 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: screenHeight * 0.02),
               Expanded(
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(60),
                       topRight: Radius.circular(60),
                     ),
@@ -205,10 +212,20 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildPasswordField() {
     final hasFocus = _passwordFocus.hasFocus;
     final hasValue = _passwordController.text.isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? const Color(AppColors.darkCard)
+        : const Color(AppColors.white);
+    final textColor = isDark
+        ? const Color(AppColors.darkText)
+        : const Color(AppColors.black);
+    final borderColor = isDark
+        ? const Color(AppColors.darkBorder)
+        : Colors.grey.shade200;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
@@ -222,14 +239,14 @@ class _LoginScreenState extends State<LoginScreen> {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: Colors.grey.shade200),
+            bottom: BorderSide(color: borderColor),
           ),
         ),
         child: TextFormField(
           controller: _passwordController,
           focusNode: _passwordFocus,
           obscureText: _obscurePassword,
-          style: const TextStyle(fontSize: 16),
+          style: TextStyle(fontSize: 16, color: textColor),
           decoration: InputDecoration(
             hintText: AppStrings.passwordPlaceholder,
             hintStyle: const TextStyle(
@@ -282,10 +299,20 @@ class _LoginScreenState extends State<LoginScreen> {
   }) {
     final hasFocus = focusNode.hasFocus;
     final hasValue = controller.text.isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? const Color(AppColors.darkCard)
+        : const Color(AppColors.white);
+    final textColor = isDark
+        ? const Color(AppColors.darkText)
+        : const Color(AppColors.black);
+    final borderColor = isDark
+        ? const Color(AppColors.darkBorder)
+        : Colors.grey.shade200;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
@@ -299,7 +326,7 @@ class _LoginScreenState extends State<LoginScreen> {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: Colors.grey.shade200),
+            bottom: BorderSide(color: borderColor),
           ),
         ),
         child: TextFormField(
@@ -307,7 +334,7 @@ class _LoginScreenState extends State<LoginScreen> {
           focusNode: focusNode,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
-          style: const TextStyle(fontSize: 16),
+          style: TextStyle(fontSize: 16, color: textColor),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: const TextStyle(

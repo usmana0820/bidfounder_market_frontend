@@ -33,6 +33,16 @@ class _OTPVerifyScreenState extends State<OTPVerifyScreen> {
     final subtitleSize = screenWidth * 0.045;
     final contentPadding = screenWidth * 0.075;
     final formTopPadding = isSmallScreen ? 30.0 : 60.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? const Color(AppColors.darkCard)
+        : const Color(AppColors.white);
+    final textColor = isDark
+        ? const Color(AppColors.darkText)
+        : const Color(AppColors.black);
+    final borderColor = isDark
+        ? const Color(AppColors.darkBorder)
+        : Colors.grey.shade200;
     
     return Scaffold(
       body: Container(
@@ -82,9 +92,9 @@ class _OTPVerifyScreenState extends State<OTPVerifyScreen> {
               SizedBox(height: screenHeight * 0.02),
               Expanded(
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(60),
                       topRight: Radius.circular(60),
                     ),
@@ -206,17 +216,27 @@ class _OTPVerifyScreenState extends State<OTPVerifyScreen> {
     final hasValue = _otpControllers[index].text.isNotEmpty;
     final screenWidth = MediaQuery.of(context).size.width;
     final otpFieldSize = (screenWidth * 0.15).clamp(50.0, 70.0);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? const Color(AppColors.darkCard)
+        : const Color(AppColors.white);
+    final textColor = isDark
+        ? const Color(AppColors.darkText)
+        : const Color(AppColors.black);
+    final borderColor = isDark
+        ? const Color(AppColors.darkBorder)
+        : Colors.grey.shade200;
 
     return Container(
       width: otpFieldSize,
       height: otpFieldSize,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: hasValue
               ? const Color(AppColors.primary)
-              : Colors.grey.shade200,
+              : borderColor,
           width: hasValue ? 2 : 1,
         ),
         boxShadow: hasValue
@@ -241,6 +261,7 @@ class _OTPVerifyScreenState extends State<OTPVerifyScreen> {
         style: TextStyle(
           fontSize: otpFieldSize * 0.4,
           fontWeight: FontWeight.bold,
+          color: textColor,
         ),
         decoration: const InputDecoration(
           border: InputBorder.none,

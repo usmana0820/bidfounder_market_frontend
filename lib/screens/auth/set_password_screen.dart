@@ -12,6 +12,11 @@ class SetPasswordScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark
+        ? const Color(AppColors.darkText)
+        : const Color(AppColors.black);
+    
     return AppScaffold(
       title: AppStrings.setPassword,
       showBackButton: true,
@@ -21,7 +26,15 @@ class SetPasswordScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(AppStrings.setPasswordTitle),
+            Text(
+              AppStrings.setPasswordTitle,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 Navigator.pushReplacementNamed(context, AppRouter.login);

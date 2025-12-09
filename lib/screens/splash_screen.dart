@@ -22,10 +22,13 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Splash screen always uses primary color background, so status bar should be light
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Color(AppColors.primary),
+        systemNavigationBarIconBrightness: Brightness.light,
       ),
     );
 

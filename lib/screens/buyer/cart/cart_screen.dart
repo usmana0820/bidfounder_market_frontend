@@ -36,9 +36,9 @@ class CartScreen extends StatelessWidget {
           showBottomNav: false,
           rightAction: cartStore.items.isNotEmpty
               ? IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.delete_outline,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                   onPressed: () => _handleClearCart(context, cartStore),
                   tooltip: 'Clear Cart',
@@ -374,22 +374,43 @@ class CartScreen extends StatelessWidget {
   }
 
   void _handleClearCart(BuildContext context, CartStore cartStore) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? const Color(AppColors.darkCard)
+        : const Color(AppColors.white);
+    final textColor = isDark
+        ? const Color(AppColors.darkText)
+        : const Color(AppColors.black);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Cart'),
-        content: const Text('Remove all items from cart?'),
+        backgroundColor: cardColor,
+        title: Text(
+          'Clear Cart',
+          style: TextStyle(color: textColor),
+        ),
+        content: Text(
+          'Remove all items from cart?',
+          style: TextStyle(color: textColor),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: textColor),
+            ),
           ),
           TextButton(
             onPressed: () {
               cartStore.clearCart();
               Navigator.pop(context);
             },
-            child: const Text('Clear', style: TextStyle(color: Colors.red)),
+            child: const Text(
+              'Clear',
+              style: TextStyle(color: Color(AppColors.error)),
+            ),
           ),
         ],
       ),
@@ -397,22 +418,43 @@ class CartScreen extends StatelessWidget {
   }
 
   void _handleRemoveItem(BuildContext context, CartStore cartStore, String itemId, String itemTitle) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? const Color(AppColors.darkCard)
+        : const Color(AppColors.white);
+    final textColor = isDark
+        ? const Color(AppColors.darkText)
+        : const Color(AppColors.black);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove Item'),
-        content: Text('Remove "$itemTitle" from cart?'),
+        backgroundColor: cardColor,
+        title: Text(
+          'Remove Item',
+          style: TextStyle(color: textColor),
+        ),
+        content: Text(
+          'Remove "$itemTitle" from cart?',
+          style: TextStyle(color: textColor),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: textColor),
+            ),
           ),
           TextButton(
             onPressed: () {
               cartStore.removeFromCart(itemId);
               Navigator.pop(context);
             },
-            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+            child: const Text(
+              'Remove',
+              style: TextStyle(color: Color(AppColors.error)),
+            ),
           ),
         ],
       ),
