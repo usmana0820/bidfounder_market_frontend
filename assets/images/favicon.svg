@@ -1,0 +1,32 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Modern gavel and bid tag icon -->
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0C2B4E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D546C;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle (optional, for icon version) -->
+  <circle cx="60" cy="60" r="55" fill="#F4F4F4" opacity="0.1"/>
+  
+  <!-- Gavel handle -->
+  <rect x="45" y="50" width="10" height="50" fill="#0C2B4E" rx="5"/>
+  
+  <!-- Gavel head -->
+  <rect x="38" y="42" width="24" height="16" fill="#1D546C" rx="3"/>
+  
+  <!-- Bid tag -->
+  <path d="M 55 35 L 75 42 L 75 65 L 55 72 Z" fill="#1A3D64"/>
+  
+  <!-- Tag hole -->
+  <circle cx="65" cy="53" r="4" fill="#F4F4F4"/>
+  
+  <!-- Upward arrow on tag -->
+  <path d="M 65 45 L 70 53 L 60 53 Z" fill="#0C2B4E"/>
+  
+  <!-- Exchange lines (subtle) -->
+  <line x1="30" y1="30" x2="50" y2="30" stroke="#1D546C" stroke-width="2" opacity="0.3"/>
+  <line x1="30" y1="35" x2="50" y2="35" stroke="#1D546C" stroke-width="2" opacity="0.3"/>
+</svg>
+

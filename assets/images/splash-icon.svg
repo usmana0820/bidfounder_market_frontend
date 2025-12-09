@@ -1,0 +1,25 @@
+<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon: Gavel with bid tag -->
+  <g id="icon">
+    <!-- Gavel handle -->
+    <rect x="20" y="35" width="8" height="45" fill="#0C2B4E" rx="4"/>
+    <!-- Gavel head -->
+    <rect x="15" y="30" width="18" height="12" fill="#1D546C" rx="2"/>
+    <!-- Bid tag -->
+    <path d="M 35 25 L 50 30 L 50 50 L 35 55 Z" fill="#1A3D64"/>
+    <circle cx="42" cy="40" r="3" fill="#F4F4F4"/>
+    <!-- Upward arrow on tag -->
+    <path d="M 42 35 L 45 40 L 39 40 Z" fill="#0C2B4E"/>
+  </g>
+  
+  <!-- Text: BidFounder -->
+  <g id="text">
+    <!-- Bid -->
+    <text x="70" y="50" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#0C2B4E">Bid</text>
+    <!-- Founder -->
+    <text x="70" y="80" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#1D546C">Founder</text>
+    <!-- Market tagline -->
+    <text x="70" y="100" font-family="Arial, sans-serif" font-size="12" fill="#1A3D64" opacity="0.8">MARKETPLACE</text>
+  </g>
+</svg>
+

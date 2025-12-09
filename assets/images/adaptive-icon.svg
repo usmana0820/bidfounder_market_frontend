@@ -1,0 +1,20 @@
+<svg width="300" height="80" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Compact horizontal logo -->
+  <g id="icon">
+    <!-- Gavel handle -->
+    <rect x="5" y="30" width="6" height="35" fill="#0C2B4E" rx="3"/>
+    <!-- Gavel head -->
+    <rect x="2" y="25" width="12" height="10" fill="#1D546C" rx="2"/>
+    <!-- Bid tag -->
+    <path d="M 15 20 L 28 25 L 28 40 L 15 45 Z" fill="#1A3D64"/>
+    <circle cx="21" cy="32" r="2.5" fill="#F4F4F4"/>
+    <path d="M 21 26 L 23.5 32 L 18.5 32 Z" fill="#0C2B4E"/>
+  </g>
+  
+  <!-- Text -->
+  <g id="text">
+    <text x="40" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#0C2B4E">Bid</text>
+    <text x="40" y="55" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1D546C">Founder</text>
+  </g>
+</svg>
+
