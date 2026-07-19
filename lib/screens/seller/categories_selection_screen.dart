@@ -1,9 +1,10 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import '../../constants/app_constants.dart';
+import '../../models/category_model.dart';
 import '../../navigation/app_router.dart';
+import '../../services/product/category_service.dart';
+import '../../services/product/subcategory_service.dart';
 import '../../widgets/app_scaffold.dart';
 
 /// Categories Selection Screen - Sell Flow
@@ -17,6 +18,11 @@ class CategoriesSelectionScreen extends StatefulWidget {
 class _CategoriesSelectionScreenState extends State<CategoriesSelectionScreen> {
   String _activeTab = 'categories';
 
+  // API-backed categories
+  List<Category> _categories = [];
+  bool _isLoading = true;
+  String? _error;
+
   final List<Map<String, dynamic>> _tabs = [
     {'id': 'categories', 'label': AppStrings.categoriesTab, 'icon': Icons.grid_view},
     {'id': 'drafts', 'label': AppStrings.draftsTab, 'icon': Icons.description},
@@ -24,156 +30,35 @@ class _CategoriesSelectionScreenState extends State<CategoriesSelectionScreen> {
     {'id': 'completed', 'label': AppStrings.completedTab, 'icon': Icons.check_circle_outline},
   ];
 
-  final List<Map<String, dynamic>> _allCategories = [
-    {
-      'id': 'electronics',
-      'name': AppStrings.electronics,
-      'subcategories': [
-        'Mobile Phones & Accessories',
-        'Computers & Laptops',
-        'Tablets & e-Readers',
-        'Cameras & Photography',
-        'Audio & Headphones',
-        'Wearable Tech (Smartwatches, Fitness Bands)',
-        'TV & Home Entertainment',
-        'Gaming Consoles & Accessories',
-        'Other Electronics',
-      ],
-    },
-    {
-      'id': 'fashion',
-      'name': AppStrings.fashion,
-      'subcategories': [
-        "Men's Clothing",
-        "Women's Clothing",
-        'Kids & Baby Clothing',
-        'Shoes & Footwear',
-        'Bags & Accessories',
-        'Watches & Jewelry',
-        'Sunglasses & Eyewear',
-        'Beauty & Personal Care',
-      ],
-    },
-    {
-      'id': 'home-garden',
-      'name': AppStrings.homeGarden,
-      'subcategories': [
-        'Furniture (Living Room, Bedroom, Office)',
-        'Kitchen & Dining',
-        'Home Decor',
-        'Garden & Outdoor',
-        'DIY Tools & Supplies',
-        'Appliances (Small & Large)',
-        'Bedding & Linen',
-      ],
-    },
-    {
-      'id': 'vehicles',
-      'name': AppStrings.vehicles,
-      'subcategories': [
-        'Cars',
-        'Motorcycles',
-        'Car Parts & Accessories',
-        'Bikes & Scooters',
-        'Car Electronics & GPS',
-        'Tools & Garage Equipment',
-      ],
-    },
-    {
-      'id': 'sports-outdoors',
-      'name': AppStrings.sportsOutdoors,
-      'subcategories': [
-        'Exercise & Fitness Equipment',
-        'Outdoor Recreation (Camping, Hiking)',
-        'Cycling & Accessories',
-        'Team Sports Equipment',
-        'Water Sports & Swimming',
-        'Winter Sports',
-      ],
-    },
-    {
-      'id': 'toys-kids-baby',
-      'name': AppStrings.toysKidsBaby,
-      'subcategories': [
-        'Baby Products & Gear',
-        'Toys & Games',
-        'Educational Toys',
-        'Baby Clothing & Accessories',
-      ],
-    },
-    {
-      'id': 'books-music-media',
-      'name': AppStrings.booksMusicMedia,
-      'subcategories': [
-        'Books (Fiction, Non-Fiction, Academic)',
-        'Music CDs & Vinyl',
-        'Movies & DVDs',
-        'Video Games',
-        'Magazines & Comics',
-      ],
-    },
-    {
-      'id': 'health-beauty',
-      'name': AppStrings.healthBeauty,
-      'subcategories': [
-        'Skincare & Cosmetics',
-        'Haircare & Styling',
-        'Personal Care (Shaving, Hygiene)',
-        'Vitamins & Supplements',
-        'Fragrances',
-      ],
-    },
-    {
-      'id': 'collectibles-art',
-      'name': AppStrings.collectiblesArt,
-      'subcategories': [
-        'Antiques',
-        'Art & Paintings',
-        'Coins & Stamps',
-        'Memorabilia & Collectibles',
-        'Handcrafted Items',
-      ],
-    },
-    {
-      'id': 'pet-supplies',
-      'name': AppStrings.petSupplies,
-      'subcategories': [
-        'Pet Food & Treats',
-        'Pet Toys & Accessories',
-        'Pet Grooming',
-        'Aquatic & Small Pets',
-      ],
-    },
-    {
-      'id': 'musical-instruments',
-      'name': AppStrings.musicalInstruments,
-      'subcategories': [
-        'Guitars & String Instruments',
-        'Keyboards & Pianos',
-        'Drums & Percussion',
-        'DJ & Studio Equipment',
-        'Wind & Brass Instruments',
-      ],
-    },
-    {
-      'id': 'industrial-business',
-      'name': AppStrings.industrialBusiness,
-      'subcategories': [
-        'Tools & Machinery',
-        'Office Equipment & Supplies',
-        'Safety & Security',
-        'Commercial Appliances',
-      ],
-    },
-    {
-      'id': 'miscellaneous',
-      'name': AppStrings.miscellaneous,
-      'subcategories': ['Everything Else', 'Freebies / Giveaways', 'Services'],
-    },
-  ];
+  List<Category> get _popularCategories => _categories.take(4).toList();
+  List<Category> get _remainingCategories => _categories.skip(4).toList();
 
-  List<Map<String, dynamic>> get _popularCategories => _allCategories.take(4).toList();
-  List<Map<String, dynamic>> get _remainingCategories => _allCategories.skip(4).toList();
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final cats = await CategoryService.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = cats;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = 'Failed to load categories';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -269,6 +154,27 @@ class _CategoriesSelectionScreenState extends State<CategoriesSelectionScreen> {
   }
 
   Widget _buildCategoriesContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_categories.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Color(AppColors.grayMedium)),
+            const SizedBox(height: 12),
+            Text(_error ?? 'No categories available'),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _loadCategories,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark
         ? const Color(AppColors.darkCard)
@@ -334,7 +240,7 @@ class _CategoriesSelectionScreenState extends State<CategoriesSelectionScreen> {
   }
 
   Widget _buildCategoryCard(
-    Map<String, dynamic> category,
+    Category category,
     Color cardColor,
     Color borderColor,
     Color textColor,
@@ -362,7 +268,7 @@ class _CategoriesSelectionScreenState extends State<CategoriesSelectionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    category['name'] as String,
+                    category.name,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -373,7 +279,9 @@ class _CategoriesSelectionScreenState extends State<CategoriesSelectionScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${(category['subcategories'] as List).length} subcategories',
+                    category.description?.isNotEmpty == true
+                        ? category.description!
+                        : 'Tap to view subcategories',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(AppColors.grayMedium),
@@ -436,14 +344,17 @@ class _CategoriesSelectionScreenState extends State<CategoriesSelectionScreen> {
     }
   }
 
-  void _handleCategorySelect(Map<String, dynamic> category) {
-    Navigator.pushReplacementNamed(
+  void _handleCategorySelect(Category category) async {
+    final subcats = await SubcategoryService.getSubcategories(categorySlug: category.slug);
+
+    Navigator.pushNamed(
       context,
       AppRouter.subcategories,
       arguments: {
-        'categoryId': category['id'],
-        'categoryName': category['name'],
-        'subcategories': jsonEncode(category['subcategories']),
+        'categoryId': category.id.toString(),
+        'categoryName': category.name,
+        'categorySlug': category.slug,
+        'subcategories': subcats.map((s) => s.name).toList(),
       },
     );
   }

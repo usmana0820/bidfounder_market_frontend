@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../constants/app_constants.dart';
 import '../navigation/app_router.dart';
+import '../services/auth/auth_service.dart';
+import '../store/auth_store.dart';
 
 /// Splash Screen with animations
 class SplashScreen extends StatefulWidget {
@@ -147,11 +150,61 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Navigate after animation
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRouter.phoneNumber);
+    // Check authentication and navigate after animation
+    _checkAuthAndNavigate();
+  }
+
+  /// Check authentication status and navigate accordingly
+  /// 
+  /// Flow:
+  /// 1. Check if token exists in SharedPreferences
+  /// 2. If token exists, validate it by fetching user profile
+  /// 3. If valid → Navigate to Dashboard (MainScreen)
+  /// 4. If invalid/expired → Navigate to Login/Phone Number screen
+  Future<void> _checkAuthAndNavigate() async {
+    // Wait for splash animation to complete
+    await Future.delayed(const Duration(milliseconds: 2500));
+
+    if (!mounted) return;
+
+    try {
+      // Check if user has a stored token
+      final isAuthenticated = await AuthService.isAuthenticated();
+
+      if (isAuthenticated) {
+        // Token exists, validate it by fetching user profile
+        try {
+          final authStore = Provider.of<AuthStore>(context, listen: false);
+          
+          // Try to load user profile (this will validate the token)
+          await authStore.loadProfile();
+
+          // If profile loaded successfully, token is valid
+          if (authStore.isAuthenticated && authStore.user != null) {
+            // Token is valid, navigate to dashboard
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, AppRouter.dashboard);
+            }
+            return;
+          }
+        } catch (e) {
+          // Token is invalid or expired, clear it and go to login
+          debugPrint('Token validation failed: $e');
+          await AuthService.logout();
+        }
       }
-    });
+
+      // No token or invalid token, navigate to login screen for existing users
+      // New users can access phone number screen from login screen
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, AppRouter.login);
+      }
+    } catch (e) {
+      // Error checking auth, navigate to login
+      debugPrint('Error checking authentication: $e');
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, AppRouter.login);
+      }
+    }
   }
 }

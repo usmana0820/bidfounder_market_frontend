@@ -1,18 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+// import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'constants/app_colors.dart';
 import 'constants/app_constants.dart';
+// import 'firebase_options.dart';
 import 'navigation/app_router.dart';
 import 'screens/buyer/chat/chat_screen.dart';
 import 'screens/buyer/dashboard/dashboard_screen.dart';
 import 'screens/seller/categories_selection_screen.dart';
 import 'screens/seller/products/my_ads_screen.dart';
 import 'screens/settings/account_settings_screen.dart';
+// import 'services/notifications/firebase_notification_service.dart';
+import 'store/auth_store.dart';
 import 'store/cart_store.dart';
 import 'widgets/bottom_nav_bar.dart';
 
-void main() {
+// /// Background message handler - must be top-level function
+// /// 
+// /// This is called when app is in background and a notification is received.
+// /// Note: This function is already defined in firebase_notification_service.dart
+// /// but we need to register it here for background message handling.
+// @pragma('vm:entry-point')
+// Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+//   await Firebase.initializeApp();
+//   debugPrint('📩 Background message received: ${message.messageId}');
+//   // Additional background handling can be added here
+//   // Main handler is in firebase_notification_service.dart
+// }
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Firebase initialization is commented out until google-services.json is added
+  // TODO: Uncomment when Firebase is configured
+  // try {
+  //   await Firebase.initializeApp(
+  //     options: DefaultFirebaseOptions.currentPlatform,
+  //   );
+  //   debugPrint('✅ Firebase initialized successfully');
+  //   
+  //   // Initialize Firebase notifications
+  //   await FirebaseNotificationService.initialize();
+  //   
+  //   // Register background message handler
+  //   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  // } catch (e) {
+  //   debugPrint('❌ Error initializing Firebase: $e');
+  //   debugPrint('⚠️ Please update firebase_options.dart with your Firebase project credentials');
+  // }
+  
   runApp(const MyApp());
 }
 
@@ -41,8 +79,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => CartStore(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthStore()),
+        ChangeNotifierProvider(create: (_) => CartStore()),
+      ],
       child: MaterialApp(
         title: AppStrings.appName,
         debugShowCheckedModeBanner: false,

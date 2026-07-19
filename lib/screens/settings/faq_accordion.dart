@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../constants/app_constants.dart';
+import '../../constants/app_constants.dart';
 
 /// FAQ Accordion Widget - Displays FAQ items in an accordion style
 class FAQAccordion extends StatefulWidget {

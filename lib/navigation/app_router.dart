@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../main.dart';
+import '../screens/auth/forgot_password_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/otp_verify_screen.dart';
-import '../screens/auth/phone_number_screen.dart';
-import '../screens/auth/set_password_screen.dart';
+import '../screens/auth/register_screen.dart';
+import '../screens/auth/reset_password_screen.dart';
 import '../screens/buyer/cart/cart_screen.dart';
 import '../screens/buyer/chat/chat_detail_screen.dart';
 import '../screens/buyer/chat/chat_screen.dart';
@@ -30,10 +31,11 @@ class AppRouter {
 
   // Route names
   static const String splash = '/';
-  static const String phoneNumber = '/phone-number';
   static const String login = '/login';
+  static const String register = '/register';
   static const String otpVerify = '/otp-verify';
-  static const String setPassword = '/set-password';
+  static const String forgotPassword = '/forgot-password';
+  static const String resetPassword = '/reset-password';
   static const String dashboard = '/dashboard';
   static const String productDetail = '/product-detail';
   static const String searchResults = '/search-results';
@@ -64,30 +66,40 @@ class AppRouter {
           settings: settings,
         );
 
-      case phoneNumber:
-        return MaterialPageRoute(
-          builder: (_) => const PhoneNumberScreen(),
-          settings: settings,
-        );
-
       case login:
         return MaterialPageRoute(
           builder: (_) => const LoginScreen(),
           settings: settings,
         );
 
+      case register:
+        return MaterialPageRoute(
+          builder: (_) => const RegisterScreen(),
+          settings: settings,
+        );
+
       case otpVerify:
         return MaterialPageRoute(
           builder: (_) => OTPVerifyScreen(
-            phoneNumber: args is Map ? args['phoneNumber'] as String? : null,
+            phoneNumber: args is Map<String, dynamic>
+                ? args['phoneNumber'] as String?
+                : null,
           ),
           settings: settings,
         );
 
-      case setPassword:
+      case forgotPassword:
         return MaterialPageRoute(
-          builder: (_) => SetPasswordScreen(
-            phoneNumber: args is Map ? args['phoneNumber'] as String? : null,
+          builder: (_) => const ForgotPasswordScreen(),
+          settings: settings,
+        );
+
+      case resetPassword:
+        return MaterialPageRoute(
+          builder: (_) => ResetPasswordScreen(
+            email: args is Map<String, dynamic>
+                ? args['email'] as String? ?? ''
+                : '',
           ),
           settings: settings,
         );

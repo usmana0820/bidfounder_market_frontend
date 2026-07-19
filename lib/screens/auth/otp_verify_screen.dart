@@ -1,9 +1,13 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../../constants/app_constants.dart';
 import '../../navigation/app_router.dart';
+import '../../services/auth/auth_service.dart';
+import '../../store/auth_store.dart';
 
 /// OTP Verify Screen with gradient background and animations
 class OTPVerifyScreen extends StatefulWidget {
@@ -37,12 +41,6 @@ class _OTPVerifyScreenState extends State<OTPVerifyScreen> {
     final cardColor = isDark
         ? const Color(AppColors.darkCard)
         : const Color(AppColors.white);
-    final textColor = isDark
-        ? const Color(AppColors.darkText)
-        : const Color(AppColors.black);
-    final borderColor = isDark
-        ? const Color(AppColors.darkBorder)
-        : Colors.grey.shade200;
     
     return Scaffold(
       body: Container(
@@ -116,41 +114,77 @@ class _OTPVerifyScreenState extends State<OTPVerifyScreen> {
                         SizedBox(height: screenHeight * 0.03),
                         FadeInUp(
                           duration: const Duration(milliseconds: 1450),
-                          child: Text(
-                            'We sent a 4-digit code to\n${widget.phoneNumber ?? "+92XXXXXXXXXX"}',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: const Color(AppColors.grayMedium),
-                              fontSize: subtitleSize.clamp(14.0, 16.0),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: screenHeight * 0.03),
-                        FadeInUp(
-                          duration: const Duration(milliseconds: 1500),
-                          child: TextButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('OTP resent successfully'),
-                                  backgroundColor: Color(AppColors.success),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(10),
+                          child: Builder(
+                            builder: (context) {
+                              final args = ModalRoute.of(context)?.settings.arguments;
+                              final email = args is Map<String, dynamic> ? args['email'] as String? : null;
+                              final phoneNumber = args is Map<String, dynamic> ? args['phoneNumber'] as String? : widget.phoneNumber;
+                              
+                              return Column(
+                                children: [
+                                  
+                                  SizedBox(height: screenHeight * 0.01),
+                                  Text(
+                                    'We sent a 4-digit code to',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: const Color(AppColors.grayMedium),
+                                      fontSize: subtitleSize.clamp(12.0, 14.0),
                                     ),
                                   ),
-                                ),
+                                  SizedBox(height: screenHeight * 0.005),
+                                  Text(
+                                    email ?? phoneNumber ?? "+92XXXXXXXXXX",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: const Color(AppColors.primary),
+                                      fontSize: subtitleSize.clamp(14.0, 16.0),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                 
+                                ],
                               );
                             },
-                            child: Text(
-                              AppStrings.resendOtp,
-                              style: TextStyle(
-                                color: const Color(AppColors.primary),
-                                fontSize: subtitleSize.clamp(14.0, 16.0),
-                                fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        FadeInUp(
+                          duration: const Duration(milliseconds: 1500),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Didn't receive the code? ",
+                                style: TextStyle(
+                                  color: const Color(AppColors.grayMedium),
+                                  fontSize: subtitleSize.clamp(12.0, 14.0),
+                                ),
                               ),
-                            ),
+                              TextButton(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('OTP resent successfully'),
+                                      backgroundColor: Color(AppColors.success),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(10),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  AppStrings.setPassword,
+                                  style: TextStyle(
+                                    color: const Color(AppColors.primary),
+                                    fontSize: subtitleSize.clamp(12.0, 14.0),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         SizedBox(height: screenHeight * 0.04),
@@ -271,12 +305,93 @@ class _OTPVerifyScreenState extends State<OTPVerifyScreen> {
     );
   }
 
-  void _handleVerify() {
+  void _handleVerify() async {
     if (_isOTPComplete) {
-      Navigator.pushNamed(
-        context,
-        AppRouter.login,
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
       );
+
+      try {
+        // Get email from route arguments
+        final args = ModalRoute.of(context)?.settings.arguments;
+        final email = args is Map<String, dynamic> ? args['email'] as String? : null;
+
+        if (email == null || email.isEmpty) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Email is required for OTP verification'),
+              backgroundColor: Color(AppColors.error),
+            ),
+          );
+          return;
+        }
+
+        // Print request data
+        debugPrint('📤 Verify OTP API Request:');
+        debugPrint('   Email: $email');
+        debugPrint('   Code: $_otpCode');
+
+        // Check if this is for password reset
+        final isPasswordReset = args is Map<String, dynamic>
+            ? args['isPasswordReset'] as bool? ?? false
+            : false;
+
+        // Verify OTP
+        final response = await AuthService.verifyOtp(
+          email: email,
+          code: _otpCode,
+        );
+
+        // Print response
+        debugPrint('✅ Verify OTP API Response:');
+        debugPrint('   $response');
+
+        if (mounted) {
+          Navigator.pop(context); // Close loading
+
+          if (isPasswordReset) {
+            // Navigate to reset password screen
+            Navigator.pushReplacementNamed(
+              context,
+              AppRouter.resetPassword,
+              arguments: {
+                'email': email,
+              },
+            );
+          } else {
+            // Get auth store and load user profile
+            final authStore = Provider.of<AuthStore>(context, listen: false);
+            await authStore.loadProfile();
+
+            // Navigate to dashboard on successful verification
+            Navigator.pushReplacementNamed(context, AppRouter.dashboard);
+          }
+        }
+      } catch (e) {
+        // Print error
+        debugPrint('❌ Verify OTP API Error:');
+        debugPrint('   $e');
+
+        if (mounted) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('OTP verification failed: ${e.toString()}'),
+              backgroundColor: const Color(AppColors.error),
+              behavior: SnackBarBehavior.floating,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+            ),
+          );
+        }
+      }
     }
   }
 

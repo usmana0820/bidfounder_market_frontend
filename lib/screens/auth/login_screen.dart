@@ -1,8 +1,12 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../constants/app_constants.dart';
-import '../../main.dart';
+import '../../navigation/app_router.dart';
+import '../../services/auth/auth_service.dart';
+import '../../store/auth_store.dart';
 
 /// Login Screen with gradient background, shape animations, and form fields
 class LoginScreen extends StatefulWidget {
@@ -16,10 +20,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _fullNameController = TextEditingController();
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
-  final _fullNameFocus = FocusNode();
 
   bool _obscurePassword = true;
   bool _isLoading = false;
@@ -38,9 +40,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final cardColor = isDark
         ? const Color(AppColors.darkCard)
         : const Color(AppColors.white);
-    final textColor = isDark
-        ? const Color(AppColors.darkText)
-        : const Color(AppColors.black);
     
     return Scaffold(
       body: Container(
@@ -69,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     FadeInUp(
                       duration: const Duration(milliseconds: 1000),
                       child: Text(
-                        AppStrings.appName,
+                        AppStrings.loginTitle,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: titleSize.clamp(28.0, 40.0),
@@ -85,6 +84,36 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: subtitleSize.clamp(14.0, 18.0),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: screenHeight * 0.01),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1400),
+                      child: GestureDetector(
+                        onTap: () {
+                          // Navigate to register screen for new user registration
+                          Navigator.pushNamed(context, AppRouter.register);
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              AppStrings.noAccountQuestion,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: subtitleSize.clamp(12.0, 16.0),
+                              ),
+                            ),
+                            Text(
+                              AppStrings.registerHere,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: subtitleSize.clamp(12.0, 16.0),
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -108,19 +137,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         children: [
                           SizedBox(height: formTopPadding),
-                          // Full Name Field
-                          FadeInUp(
-                            duration: const Duration(milliseconds: 1400),
-                            child: _buildTextField(
-                              controller: _fullNameController,
-                              focusNode: _fullNameFocus,
-                              hintText: 'Enter your full name',
-                              icon: Icons.person_outline,
-                              keyboardType: TextInputType.name,
-                              textCapitalization: TextCapitalization.words,
-                            ),
-                          ),
-                          SizedBox(height: screenHeight * 0.02),
                           // Email Field
                           FadeInUp(
                             duration: const Duration(milliseconds: 1500),
@@ -148,7 +164,27 @@ class _LoginScreenState extends State<LoginScreen> {
                             duration: const Duration(milliseconds: 1600),
                             child: _buildPasswordField(),
                           ),
-                          SizedBox(height: screenHeight * 0.04),
+                          SizedBox(height: screenHeight * 0.01),
+                          FadeInUp(
+                            duration: const Duration(milliseconds: 1650),
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.pushNamed(context, AppRouter.forgotPassword);
+                                },
+                                child: Text(
+                                  'Forgot Password?',
+                                  style: TextStyle(
+                                    fontSize: screenWidth * 0.03,
+                                    color: const Color(AppColors.primary),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: screenHeight * 0.03),
                           FadeInUp(
                             duration: const Duration(milliseconds: 1700),
                             child: SizedBox(
@@ -202,10 +238,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _fullNameController.dispose();
     _emailFocus.dispose();
     _passwordFocus.dispose();
-    _fullNameFocus.dispose();
     super.dispose();
   }
 
@@ -246,7 +280,11 @@ class _LoginScreenState extends State<LoginScreen> {
           controller: _passwordController,
           focusNode: _passwordFocus,
           obscureText: _obscurePassword,
-          style: TextStyle(fontSize: 16, color: textColor),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            color: textColor,
+          ),
           decoration: InputDecoration(
             hintText: AppStrings.passwordPlaceholder,
             hintStyle: const TextStyle(
@@ -272,6 +310,10 @@ class _LoginScreenState extends State<LoginScreen> {
               },
             ),
             border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 15,
+              vertical: 18,
+            ),
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
@@ -334,7 +376,11 @@ class _LoginScreenState extends State<LoginScreen> {
           focusNode: focusNode,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
-          style: TextStyle(fontSize: 16, color: textColor),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            color: textColor,
+          ),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: const TextStyle(
@@ -347,6 +393,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   : const Color(AppColors.grayMedium),
             ),
             border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 15,
+              vertical: 18,
+            ),
           ),
           validator: validator,
           onChanged: (_) => setState(() {}),
@@ -361,18 +411,59 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = true;
       });
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        // Prepare login data
+        final email = _emailController.text.trim();
+        final password = _passwordController.text;
 
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        // Print request data
+        debugPrint('📤 Login API Request:');
+        debugPrint('   Email: $email');
+        debugPrint('   Password: ${'*' * password.length}');
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => MainScreen()),
+        // Call login API
+        final response = await AuthService.login(
+          email: email,
+          password: password,
         );
+
+        // Print response
+        debugPrint('✅ Login API Response:');
+        debugPrint('   $response');
+
+        if (mounted) {
+          // Get auth store and load user profile
+          final authStore = Provider.of<AuthStore>(context, listen: false);
+          await authStore.loadProfile();
+
+          setState(() {
+            _isLoading = false;
+          });
+
+          // Navigate to dashboard on successful login
+          Navigator.pushReplacementNamed(context, AppRouter.dashboard);
+        }
+      } catch (e) {
+        // Print error
+        debugPrint('❌ Login API Error:');
+        debugPrint('   $e');
+
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login failed: ${e.toString()}'),
+              backgroundColor: const Color(AppColors.error),
+              behavior: SnackBarBehavior.floating,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+            ),
+          );
+        }
       }
     }
   }

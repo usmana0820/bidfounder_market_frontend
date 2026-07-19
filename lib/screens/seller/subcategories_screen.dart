@@ -1,25 +1,77 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import '../../constants/app_constants.dart';
 import '../../navigation/app_router.dart';
 import '../../widgets/app_scaffold.dart';
+import '../../services/product/subcategory_service.dart';
+import '../../models/subcategory_model.dart';
 
 /// Subcategories Screen - Sell Flow
-class SubcategoriesScreen extends StatelessWidget {
+class SubcategoriesScreen extends StatefulWidget {
   const SubcategoriesScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-    final categoryId = args?['categoryId'] as String? ?? '';
-    final categoryName = args?['categoryName'] as String? ?? '';
-    final subcategoriesJson = args?['subcategories'] as String? ?? '[]';
-    final subcategories = (jsonDecode(subcategoriesJson) as List)
-        .map((e) => e as String)
-        .toList();
+  State<SubcategoriesScreen> createState() => _SubcategoriesScreenState();
+}
 
+class _SubcategoriesScreenState extends State<SubcategoriesScreen> {
+  List<Subcategory> _subcategories = [];
+  bool _isLoading = true;
+  String? _error;
+
+  String _categoryId = '';
+  String _categoryName = '';
+  String _categorySlug = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Delay to get context arguments
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      _categoryId = args?['categoryId'] as String? ?? '';
+      _categoryName = args?['categoryName'] as String? ?? '';
+      _categorySlug = args?['categorySlug'] as String? ?? '';
+      final passedSubs = args?['subcategories'] as List<dynamic>? ?? [];
+      if (passedSubs.isNotEmpty) {
+        _subcategories = passedSubs.map((e) => Subcategory(
+          id: 0,
+          categoryId: int.tryParse(_categoryId) ?? 0,
+          categoryName: _categoryName,
+          categorySlug: _categorySlug,
+          name: e.toString(),
+          slug: e.toString(),
+        )).toList();
+        _isLoading = false;
+        setState(() {});
+      }
+      _loadSubcategories();
+    });
+  }
+
+  Future<void> _loadSubcategories() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final subs = await SubcategoryService.getSubcategories(categorySlug: _categorySlug);
+      if (mounted) {
+        setState(() {
+          _subcategories = subs;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = 'Failed to load subcategories';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark
         ? const Color(AppColors.darkCard)
@@ -31,29 +83,44 @@ class SubcategoriesScreen extends StatelessWidget {
         ? const Color(AppColors.darkText)
         : const Color(AppColors.black);
 
-    void handleSubcategorySelect(String subcategory) {
-      Navigator.pushReplacementNamed(
+    void handleSubcategorySelect(Subcategory subcategory) {
+      Navigator.pushNamed(
         context,
         AppRouter.productListing,
         arguments: {
-          'categoryId': categoryId,
-          'categoryName': categoryName,
-          'subcategory': subcategory,
+          'categoryId': _categoryId,
+          'categoryName': _categoryName,
+          'subcategory': subcategory.name,
         },
       );
     }
 
-    return AppScaffold(
-      title: categoryName,
-      showBackButton: true,
-      showCart: false,
-      showBottomNav: false,
-      body: ListView.separated(
+    Widget body;
+    if (_isLoading) {
+      body = const Center(child: CircularProgressIndicator());
+    } else if (_subcategories.isEmpty) {
+      body = Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Color(AppColors.grayMedium)),
+            const SizedBox(height: 12),
+            Text(_error ?? 'No subcategories found'),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _loadSubcategories,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      body = ListView.separated(
         padding: const EdgeInsets.all(15),
-        itemCount: subcategories.length,
+        itemCount: _subcategories.length,
         separatorBuilder: (context, index) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
-          final subcategory = subcategories[index];
+          final subcategory = _subcategories[index];
           return GestureDetector(
             onTap: () => handleSubcategorySelect(subcategory),
             child: Container(
@@ -75,7 +142,7 @@ class SubcategoriesScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      subcategory,
+                      subcategory.name,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
@@ -93,7 +160,15 @@ class SubcategoriesScreen extends StatelessWidget {
             ),
           );
         },
-      ),
+      );
+    }
+
+    return AppScaffold(
+      title: _categoryName,
+      showBackButton: true,
+      showCart: false,
+      showBottomNav: false,
+      body: body,
     );
   }
 }

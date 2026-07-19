@@ -1,12 +1,18 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 
 import '../../../constants/app_constants.dart';
+import '../../../models/category_model.dart';
+import '../../../models/subcategory_model.dart';
 import '../../../models/product_model.dart';
 import '../../../navigation/app_router.dart';
+import '../../../services/api_service.dart';
+import '../../../services/product/category_service.dart';
+import '../../../services/product/subcategory_service.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../widgets/product_card.dart';
 import '../../../widgets/search_bar.dart' as search_widget;
@@ -56,6 +62,103 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   final List<Product> _allProducts = _generateMockProducts();
   List<Product> _filteredProducts = [];
+  
+  // Categories state
+  List<Category> _categories = [];
+  bool _isLoadingCategories = true;
+  String? _categoriesError;
+  List<Subcategory> _subcategories = [];
+  bool _isLoadingSubcategories = false;
+  String? _subcategoriesError;
+  String? _selectedSubcategory;
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredProducts = _allProducts;
+    _requestLocationPermission();
+    _printToken();
+    _loadCategories(); // Load categories on init
+  }
+
+  /// Load categories from API with fallback to cache
+  Future<void> _loadCategories() async {
+    setState(() {
+      _isLoadingCategories = true;
+      _categoriesError = null;
+    });
+
+    try {
+      final categories = await CategoryService.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = List<Category>.from(categories);
+          _isLoadingCategories = false;
+        });
+        // Preload subcategories for first category if available
+        if (_categories.isNotEmpty) {
+          _loadSubcategories(_categories.first.slug);
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading categories: $e');
+      if (mounted) {
+        setState(() {
+          _categoriesError = e.toString();
+          _isLoadingCategories = false;
+          // Try to load from cache as last resort
+          _loadCategoriesFromCache();
+        });
+      }
+    }
+  }
+
+  /// Load categories from cache only (fallback)
+  Future<void> _loadCategoriesFromCache() async {
+    try {
+      final cachedCategories = await CategoryService.getCachedCategoriesOnly();
+      if (mounted && cachedCategories.isNotEmpty) {
+        setState(() {
+          _categories = List<Category>.from(cachedCategories);
+          _categoriesError = 'Using cached data (offline mode)';
+        });
+        debugPrint('✅ Loaded ${cachedCategories.length} categories from cache');
+        // Preload subcategories for first cached category
+        _loadSubcategories(_categories.first.slug);
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to load from cache: $e');
+    }
+  }
+
+  /// Load subcategories for a given category slug
+  Future<void> _loadSubcategories(String categorySlug) async {
+    setState(() {
+      _isLoadingSubcategories = true;
+      _subcategoriesError = null;
+      _selectedSubcategory = null;
+    });
+
+    try {
+      final subcats = await SubcategoryService.getSubcategories(categorySlug: categorySlug);
+      if (mounted) {
+        setState(() {
+          _subcategories = subcats;
+          _isLoadingSubcategories = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading subcategories: $e');
+      final cached = await SubcategoryService.getSubcategories(categorySlug: categorySlug);
+      if (mounted) {
+        setState(() {
+          _subcategories = cached;
+          _isLoadingSubcategories = false;
+          _subcategoriesError = cached.isEmpty ? e.toString() : 'Using cached subcategories';
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +217,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               // Categories
               _buildCategories(cardColor, textColor),
+              // Subcategories
+              _buildSubcategories(cardColor, textColor),
 
               // Products Grid
               _filteredProducts.isEmpty
@@ -177,11 +282,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _filteredProducts = _allProducts;
-    _requestLocationPermission();
+  /// Print the access token when user comes to dashboard
+  Future<void> _printToken() async {
+    try {
+      final token = await ApiService.getAccessToken();
+      if (token != null) {
+        debugPrint('🔑 Access Token (Dashboard):');
+        debugPrint('   $token');
+      } else {
+        debugPrint('⚠️ No access token found');
+      }
+    } catch (e) {
+      debugPrint('❌ Error retrieving token: $e');
+    }
   }
 
   void _applyFilters() {
@@ -325,19 +438,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildCategories(Color cardColor, Color textColor) {
-    final categories = [
-      {'id': 'electronics', 'name': AppStrings.electronics, 'image': 'assets/images/Electronics.jpg'},
-      {'id': 'fashion', 'name': AppStrings.fashion, 'image': 'assets/images/Fashion.jpg'},
-      {'id': 'home-garden', 'name': AppStrings.homeGarden, 'image': 'assets/images/Home & Garden.jpg'},
-      {'id': 'vehicles', 'name': AppStrings.vehicles, 'image': 'assets/images/Vehicles.jpg'},
-      {'id': 'sports-outdoors', 'name': AppStrings.sportsOutdoors, 'image': 'assets/images/Sports & Outdoors.jpg'},
-      {'id': 'toys-kids-baby', 'name': AppStrings.toysKidsBaby, 'image': 'assets/images/Toys, Kids & Baby.jpg'},
-      {'id': 'books-music-media', 'name': AppStrings.booksMusicMedia, 'image': 'assets/images/Books, Music & Media.jpg'},
-      {'id': 'health-beauty', 'name': AppStrings.healthBeauty, 'image': 'assets/images/Health & Beauty.jpg'},
-      {'id': 'musical-instruments', 'name': AppStrings.musicalInstruments, 'image': 'assets/images/Musical Instruments.jpg'},
-      {'id': 'industrial-business', 'name': AppStrings.industrialBusiness, 'image': 'assets/images/Industrial & Business.jpg'},
-      {'id': 'miscellaneous', 'name': AppStrings.miscellaneous, 'image': 'assets/images/Miscellaneous.jpg'},
-    ];
+    // Show loading indicator while fetching categories
+    if (_isLoadingCategories) {
+      return Container(
+        height: 60,
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 15),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Show error message if categories failed to load and cache is empty
+    if (_categories.isEmpty && _categoriesError != null && !_categoriesError!.contains('cached')) {
+      return Container(
+        height: 60,
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 15),
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 16, color: Color(AppColors.error)),
+              const SizedBox(width: 8),
+              Text(
+                'Failed to load categories',
+                style: TextStyle(fontSize: 12, color: textColor),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: _loadCategories,
+                child: const Icon(Icons.refresh, size: 16, color: Color(AppColors.primary)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Use real categories from API or cache
+    final categoriesToShow = _categories.isNotEmpty ? _categories : _getDefaultCategories();
 
     return Container(
       height: 60,
@@ -345,7 +486,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 15),
-        itemCount: categories.length + 1,
+        itemCount: categoriesToShow.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
             // All Categories button
@@ -388,14 +529,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             );
           }
 
-          final category = categories[index - 1];
-          final isSelected = _selectedCategory == category['id'];
+          final category = categoriesToShow[index - 1];
+          final isSelected = _selectedCategory == category.slug;
 
           return GestureDetector(
             onTap: () {
               setState(() {
-                _selectedCategory = category['id'] as String;
+                _selectedCategory = category.slug;
+                _selectedSubcategory = null;
               });
+              _loadSubcategories(category.slug);
               _applyFilters();
             },
             child: Container(
@@ -419,18 +562,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.asset(
-                      category['image'] as String,
+                      category.imageAsset,
                       width: 24,
                       height: 24,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return const SizedBox(width: 24, height: 24);
+                        return Container(
+                          width: 24,
+                          height: 24,
+                          color: const Color(AppColors.grayLight),
+                          child: const Icon(Icons.category, size: 16),
+                        );
                       },
                     ),
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    category['name'] as String,
+                    category.name,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -440,6 +588,109 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Get default categories as fallback
+  /// Used when API and cache both fail
+  List<Category> _getDefaultCategories() {
+    return [
+      Category(id: 1, name: 'Electronics', slug: 'electronics'),
+      Category(id: 2, name: 'Fashion', slug: 'fashion'),
+      Category(id: 3, name: 'Home & Garden', slug: 'home-garden'),
+      Category(id: 4, name: 'Vehicles', slug: 'vehicles'),
+    ];
+  }
+
+  Widget _buildSubcategories(Color cardColor, Color textColor) {
+    if (_isLoadingSubcategories) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 10),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_subcategories.isEmpty && _selectedCategory != null) {
+      return const SizedBox.shrink();
+    }
+
+    final subcats = _subcategories;
+
+    return Container(
+      height: 52,
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 15),
+        itemCount: subcats.length + 1,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            final isSelected = _selectedSubcategory == null;
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedSubcategory = null;
+                });
+                _applyFilters();
+              },
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(AppColors.primary) : cardColor,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isSelected ? const Color(AppColors.primary) : const Color(AppColors.grayLight),
+                    width: 1,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    AppStrings.allCategories,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? Colors.white : textColor,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          final sub = subcats[index - 1];
+          final isSelected = _selectedSubcategory == sub.slug;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedSubcategory = sub.slug;
+              });
+              _applyFilters();
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(AppColors.primary) : cardColor,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isSelected ? const Color(AppColors.primary) : const Color(AppColors.grayLight),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                sub.name,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Colors.white : textColor,
+                ),
               ),
             ),
           );
@@ -463,13 +714,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ? const Color(AppColors.darkBorder)
         : const Color(AppColors.grayLight);
 
-    final categories = [
-      {'id': 'electronics', 'name': AppStrings.electronics},
-      {'id': 'fashion', 'name': AppStrings.fashion},
-      {'id': 'home-garden', 'name': AppStrings.homeGarden},
-      {'id': 'vehicles', 'name': AppStrings.vehicles},
-      {'id': 'sports-outdoors', 'name': AppStrings.sportsOutdoors},
-    ];
+    final filterCategories = _categories.isNotEmpty ? _categories : _getDefaultCategories();
+    final filterSubcategories = _selectedCategory == null
+        ? <Subcategory>[]
+        : _subcategories.where((s) => s.categorySlug == _selectedCategory).toList();
 
     final sortOptions = [
       AppStrings.priceLowToHigh,
@@ -550,7 +798,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             height: 50,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              itemCount: categories.length + 1,
+                              itemCount: filterCategories.length + 1,
                               itemBuilder: (context, index) {
                                 if (index == 0) {
                                   final isSelected = _selectedCategory == null;
@@ -558,6 +806,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     onTap: () {
                                       setState(() {
                                         _selectedCategory = null;
+                                        _selectedSubcategory = null;
                                       });
                                     },
                                     child: Container(
@@ -586,13 +835,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                   );
                                 }
-                                final category = categories[index - 1];
-                                final isSelected = _selectedCategory == category['id'];
+                                final category = filterCategories[index - 1];
+                                final isSelected = _selectedCategory == category.slug;
                                 return GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      _selectedCategory = category['id'] as String;
+                                      _selectedCategory = category.slug;
+                                      _selectedSubcategory = null;
                                     });
+                                    _loadSubcategories(category.slug);
                                   },
                                   child: Container(
                                     margin: const EdgeInsets.only(right: 10),
@@ -609,7 +860,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        category['name'] as String,
+                                        category.name,
                                         style: TextStyle(
                                           color: isSelected ? Colors.white : textColor,
                                         ),
@@ -620,6 +871,90 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               },
                             ),
                           ),
+                          const SizedBox(height: 16),
+                          if (_selectedCategory != null && filterSubcategories.isNotEmpty) ...[
+                            Text(
+                              'Subcategories',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              height: 45,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: filterSubcategories.length + 1,
+                                itemBuilder: (context, index) {
+                                  if (index == 0) {
+                                    final isSelected = _selectedSubcategory == null;
+                                    return GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedSubcategory = null;
+                                        });
+                                      },
+                                      child: Container(
+                                        margin: const EdgeInsets.only(right: 10),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? const Color(AppColors.primary)
+                                              : backgroundColor,
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(color: borderColor),
+                                        ),
+                                        child: Text(
+                                          'All',
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? Colors.white
+                                                : textColor,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  final sub = filterSubcategories[index - 1];
+                                  final isSelected = _selectedSubcategory == sub.slug;
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedSubcategory = sub.slug;
+                                      });
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.only(right: 10),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? const Color(AppColors.primary)
+                                            : backgroundColor,
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: borderColor),
+                                      ),
+                                      child: Text(
+                                        sub.name,
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? Colors.white
+                                              : textColor,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 30),
                           // Price Range
                           Text(

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../constants/app_constants.dart';
 import '../main.dart';
 import '../navigation/app_router.dart';
+import '../store/auth_store.dart';
 
 /// Drawer Widget - Professional side navigation drawer
 class AppDrawer extends StatelessWidget {
@@ -21,9 +24,6 @@ class AppDrawer extends StatelessWidget {
         ? const Color(AppColors.darkText)
         : const Color(AppColors.black);
     final primaryColor = const Color(AppColors.primary);
-    final backgroundColor = isDark
-        ? const Color(AppColors.darkBackground)
-        : const Color(AppColors.background);
 
     return Drawer(
       backgroundColor: cardColor,
@@ -70,52 +70,111 @@ class AppDrawer extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 30),
-                // User Avatar
-                Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          width: 2,
+                // User Avatar with Profile Data
+                Consumer<AuthStore>(
+                  builder: (context, authStore, _) {
+                    final user = authStore.user;
+                    final userName = user?.fullName ?? AppStrings.userName;
+                    final userEmail = user?.email ?? AppStrings.userEmail;
+                    final profileImageUrl = user?.profileImageUrl;
+
+                    // Get initial for avatar
+                    String getInitial(String name) {
+                      if (name.isEmpty || name == AppStrings.userName) return 'U';
+                      return name[0].toUpperCase();
+                    }
+
+                    return Row(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 2,
+                            ),
+                          ),
+                          child: profileImageUrl != null && profileImageUrl.isNotEmpty
+                              ? ClipOval(
+                                  child: CachedNetworkImage(
+                                    imageUrl: profileImageUrl,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) {
+                                      // Log error for debugging
+                                      debugPrint('❌ Hamburger menu profile image failed to load:');
+                                      debugPrint('   URL: $url');
+                                      debugPrint('   Error: $error');
+                                      
+                                      // Always fallback to initial letter
+                                      return Center(
+                                        child: Text(
+                                          getInitial(userName),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    httpHeaders: const {
+                                      'Accept': 'image/*',
+                                    },
+                                    memCacheWidth: 120,
+                                    memCacheHeight: 120,
+                                  ),
+                                )
+                              : Center(
+                                  child: Text(
+                                    getInitial(userName),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
                         ),
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        size: 32,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppStrings.userName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                userName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                userEmail,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            AppStrings.userEmail,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 14,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),

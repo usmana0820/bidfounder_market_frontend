@@ -51,6 +51,20 @@ class AppStrings {
   // Login
   static const String login = 'Login';
   static const String loggingIn = 'Logging in...';
+  static const String loginTitle = 'Login';
+  static const String registerTitle = 'Register';
+  static const String registerSubtitle = 'Create your account to get started';
+  static const String noAccountQuestion = "Don't have an account? ";
+  static const String registerHere = 'Register Here';
+  static const String haveAccountQuestion = 'Already have an account? ';
+  static const String loginHere = 'Login Here';
+  static const String forgotPasswordTitle = 'Forgot Password';
+  static const String forgotPasswordSubtitle =
+      'Enter your email to receive OTP for password reset';
+  static const String sendOtp = 'Send OTP';
+  static const String resetPasswordTitle = 'Reset Password';
+  static const String resetPasswordSubtitle = 'Enter your new password';
+  static const String resetPasswordAction = 'Reset Password';
   static const String email = 'Email';
   static const String password = 'Password';
   static const String phoneNumberLabel = 'Phone Number';
@@ -61,7 +75,6 @@ class AppStrings {
   static const String otpTitle = 'Enter Verification Code';
   static const String otpSubtitle = 'We sent a 6-digit code to {phone}';
   static const String verify = 'Verify';
-  static const String resendOtp = 'Resend OTP';
   static const String setPassword = 'Set Password';
   static const String setPasswordTitle = 'Create Your Password';
   static const String setPasswordSubtitle = 'Choose a strong password to secure your account';

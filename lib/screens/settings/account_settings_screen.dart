@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../constants/app_constants.dart';
 import '../../navigation/app_router.dart';
+import '../../store/auth_store.dart';
 import '../../widgets/app_scaffold.dart';
-import '../../widgets/faq_accordion.dart';
+import 'faq_accordion.dart';
 
 /// Account Settings Screen - Professional settings interface
 class AccountSettingsScreen extends StatelessWidget {
@@ -729,9 +731,24 @@ class AccountSettingsScreen extends StatelessWidget {
               title: const Text('Change Password'),
               onTap: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Change password feature coming soon')),
-                );
+                // Navigate to reset password screen with user's email
+                final authStore = Provider.of<AuthStore>(context, listen: false);
+                final userEmail = authStore.user?.email;
+                
+                if (userEmail != null && userEmail.isNotEmpty) {
+                  Navigator.pushNamed(
+                    context,
+                    AppRouter.resetPassword,
+                    arguments: {'email': userEmail},
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Unable to get user email. Please try again.'),
+                      backgroundColor: Color(AppColors.error),
+                    ),
+                  );
+                }
               },
             ),
             ListTile(
